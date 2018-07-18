@@ -1,0 +1,28 @@
+{
+  "name": "easy_display_server",
+  "version": "0.1.0",
+  "description": "easy display server",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.16.3",
+    "redis": "^2.8.0",
+    "socket.io": "^2.1.1"
+  },
+  "devDependencies": {
+    "tslint": "^5.10.0",
+    "typescript": "^2.9.2",
+    "@types/express": "^4.16.0",
+    "@types/redis": "^2.8.6",
+    "@types/socket.io": "^1.4.36"
+  },
+  "scripts": {
+    "copy-html": "rm -f ./dist/index.html && cp index.html dist/",
+    "test": "npm test ",
+    "build-ts": "./node_modules/typescript/bin/tsc",
+    "watch-ts": "./node_modules/typescript/bin/tsc -w",
+    "tslint": "node_modules/tslint/bin/tslint -c tslint.json -p tsconfig.json",
+    "build": "npm run build-ts && npm run tslint"
+  },
+  "author": "Mohammed O. Tillawy",
+  "license": "ISC"
+}
