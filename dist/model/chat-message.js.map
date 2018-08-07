@@ -1,1 +1,1 @@
-{"version":3,"file":"chat-message.js","sourceRoot":"","sources":["../../src/model/chat-message.ts"],"names":[],"mappings":";;AAAA,yBAAmC;AAEnC,iBAAyB,SAAQ,UAAO;IACpC,YAAY,IAAU,EAAE,OAAe;QACnC,KAAK,CAAC,IAAI,EAAE,OAAO,CAAC,CAAC;IACzB,CAAC;CACJ;AAJD,kCAIC"}
+{"version":3,"file":"chat-message.js","sourceRoot":"","sources":["../../src/model/chat-message.ts"],"names":[],"mappings":";;AAAA,yBAAmC;AAEnC,MAAa,WAAY,SAAQ,UAAO;IACpC,YAAY,IAAU,EAAE,OAAe;QACnC,KAAK,CAAC,IAAI,EAAE,OAAO,CAAC,CAAC;IACzB,CAAC;CACJ;AAJD,kCAIC"}

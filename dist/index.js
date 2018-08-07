@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const constants_1 = require("./constants");
 const app = require('express')();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
@@ -67,11 +68,11 @@ io.of("/mobile/0.1").on('connection', function (socket) {
     const socketId = socket.id;
     console.log(`mobile connection token: "${token}" , clientType: "${clientType}", socket: ${socketId}...`);
     isValidTokenPromise(token).then(() => {
-        socket.emit('event_server_to_mobile', { message: 'connection_success' });
-        socket.on('event_mobile_to_desktop', (data) => {
+        socket.emit(constants_1.EVENT_SERVER_TO_MOBILE, { message: 'connection_success' });
+        socket.on(constants_1.EVENT_MOBILE_TO_DESKTOP, (data) => {
             redisClient.hget(`conn:${token}`, "desktop", (err, mobileSocketId) => {
                 const desktopSocket = currentSockets[mobileSocketId];
-                desktopSocket.emit('event_mobile_to_desktop', data);
+                desktopSocket.emit(constants_1.EVENT_MOBILE_TO_DESKTOP, data);
             });
         });
         currentSockets[socketId] = socket;
@@ -87,15 +88,15 @@ io.of("/desktop/0.1").on('connection', function (socket) {
     const socketId = socket.id;
     isValidTokenPromise(token).then(() => {
         console.log(`desktop connection success, token: "${token}", clientType: "${clientType}", `);
-        socket.emit('event_server_to_desktop', { message: 'connection_success' });
+        socket.emit(constants_1.EVENT_SERVER_TO_DESKTOP, { message: 'connection_success' });
         currentSockets[socketId] = socket;
         redisClient.hset(`conn:${token}`, "desktop", socketId);
-        socket.on('event_desktop_to_mobile', function (data) {
-            console.log("event_desktop_to_mobile: ", data);
+        socket.on(constants_1.EVENT_DESKTOP_TO_MOBILE, function (data) {
+            console.log(constants_1.EVENT_DESKTOP_TO_MOBILE, " ", data);
             // const mobileSocketId = redisClient.hget(`user:${userId}`,"mobile");
             redisClient.hget(`conn:${token}`, "mobile", function (err, mobileSocketId) {
                 const mobileSocket = currentSockets[mobileSocketId];
-                mobileSocket.emit('event_desktop_to_mobile', data);
+                mobileSocket.emit(constants_1.EVENT_DESKTOP_TO_MOBILE, data);
             });
         });
     }).catch(reason => {
