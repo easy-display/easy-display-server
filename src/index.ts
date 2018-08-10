@@ -1,11 +1,13 @@
-import { Response, Request } from "express";
+import {Request, Response} from "express";
 import {Socket} from "socket.io";
 import {
+    ClientType,
     EVENT_DESKTOP_TO_MOBILE,
     EVENT_MOBILE_TO_DESKTOP,
     EVENT_SERVER_TO_DESKTOP,
     EVENT_SERVER_TO_MOBILE
 } from "./constants";
+
 const app = require('express')();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
@@ -90,7 +92,7 @@ const isValidTokenPromise = (token: string) : Promise<boolean> => {
 };
 
 
-const emitDataFor = ((clientType: string, token: string, eventName: string, data: string) => {
+const emitDataFor = ((clientType: ClientType, token: string, eventName: string, data: any) => {
 
     console.log(`emitDataFor: clientType:${clientType}, token:${token}, event:${eventName}, data: ${data}`);
     redisClient.hget(`conn:${token}`,clientType ,(err: Error,socketId: string) => {
@@ -114,17 +116,12 @@ io.of("/mobile/0.1").on('connection', function (socket: Socket) {
 
         socket.on('disconnect', function () {
             console.log("mobile disconnected");
-            socket.emit('mobile disconnected');
+            const data = { message: 'mobile_connection_lost' };
+            emitDataFor(ClientType.Desktop, token ,EVENT_SERVER_TO_DESKTOP, data );
         });
 
         socket.on(EVENT_MOBILE_TO_DESKTOP, (data) => {
-            emitDataFor("desktop", token ,EVENT_MOBILE_TO_DESKTOP, data);
-            /*
-            redisClient.hget(`conn:${token}`,"desktop",(err: Error,mobileSocketId: string) => {
-                const desktopSocket = currentSockets[mobileSocketId as string];
-                desktopSocket.emit(EVENT_MOBILE_TO_DESKTOP, data);
-            });
-            */
+            emitDataFor(ClientType.Desktop, token ,EVENT_MOBILE_TO_DESKTOP, data);
         });
         currentSockets[socketId] = socket;
         redisClient.hset(`conn:${token}`,"mobile", socketId);
@@ -147,21 +144,15 @@ io.of("/desktop/0.1").on('connection', function (socket: Socket) {
 
         socket.on('disconnect', function () {
             console.log("desktop disconnected");
-            socket.emit('desktop disconnected');
+            const data = { message: 'desktop_connection_lost' };
+            emitDataFor(ClientType.Mobile, token ,EVENT_SERVER_TO_MOBILE, data );
         });
 
         socket.on(EVENT_DESKTOP_TO_MOBILE, function (data) {
             console.log(EVENT_DESKTOP_TO_MOBILE , " " , data);
 
-            emitDataFor("mobile",token, EVENT_DESKTOP_TO_MOBILE ,data);
+            emitDataFor(ClientType.Mobile,token, EVENT_DESKTOP_TO_MOBILE ,data);
 
-            /*
-            // const mobileSocketId = redisClient.hget(`user:${userId}`,"mobile");
-            redisClient.hget(`conn:${token}`,"mobile",function(err: Error,mobileSocketId: string){
-                const mobileSocket = currentSockets[mobileSocketId as string];
-                mobileSocket.emit( EVENT_DESKTOP_TO_MOBILE, data);
-            });
-            */
         });
 
     }).catch(reason => {

@@ -83,16 +83,11 @@ io.of("/mobile/0.1").on('connection', function (socket) {
         socket.emit(constants_1.EVENT_SERVER_TO_MOBILE, { message: 'connection_success' });
         socket.on('disconnect', function () {
             console.log("mobile disconnected");
-            socket.emit('mobile disconnected');
+            const data = { message: 'mobile_connection_lost' };
+            emitDataFor(constants_1.ClientType.Desktop, token, constants_1.EVENT_SERVER_TO_DESKTOP, data);
         });
         socket.on(constants_1.EVENT_MOBILE_TO_DESKTOP, (data) => {
-            emitDataFor("desktop", token, constants_1.EVENT_MOBILE_TO_DESKTOP, data);
-            /*
-            redisClient.hget(`conn:${token}`,"desktop",(err: Error,mobileSocketId: string) => {
-                const desktopSocket = currentSockets[mobileSocketId as string];
-                desktopSocket.emit(EVENT_MOBILE_TO_DESKTOP, data);
-            });
-            */
+            emitDataFor(constants_1.ClientType.Desktop, token, constants_1.EVENT_MOBILE_TO_DESKTOP, data);
         });
         currentSockets[socketId] = socket;
         redisClient.hset(`conn:${token}`, "mobile", socketId);
@@ -112,18 +107,12 @@ io.of("/desktop/0.1").on('connection', function (socket) {
         redisClient.hset(`conn:${token}`, "desktop", socketId);
         socket.on('disconnect', function () {
             console.log("desktop disconnected");
-            socket.emit('desktop disconnected');
+            const data = { message: 'desktop_connection_lost' };
+            emitDataFor(constants_1.ClientType.Mobile, token, constants_1.EVENT_SERVER_TO_MOBILE, data);
         });
         socket.on(constants_1.EVENT_DESKTOP_TO_MOBILE, function (data) {
             console.log(constants_1.EVENT_DESKTOP_TO_MOBILE, " ", data);
-            emitDataFor("mobile", token, constants_1.EVENT_DESKTOP_TO_MOBILE, data);
-            /*
-            // const mobileSocketId = redisClient.hget(`user:${userId}`,"mobile");
-            redisClient.hget(`conn:${token}`,"mobile",function(err: Error,mobileSocketId: string){
-                const mobileSocket = currentSockets[mobileSocketId as string];
-                mobileSocket.emit( EVENT_DESKTOP_TO_MOBILE, data);
-            });
-            */
+            emitDataFor(constants_1.ClientType.Mobile, token, constants_1.EVENT_DESKTOP_TO_MOBILE, data);
         });
     }).catch(reason => {
         console.error(reason);
