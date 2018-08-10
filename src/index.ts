@@ -1,11 +1,13 @@
 import {Request, Response} from "express";
 import {Socket} from "socket.io";
 import {
-    ClientType,
+    ClientType, DESKTOP_CONNECTION_LOST, DESKTOP_CONNECTION_SUCCESS,
     EVENT_DESKTOP_TO_MOBILE,
     EVENT_MOBILE_TO_DESKTOP,
     EVENT_SERVER_TO_DESKTOP,
-    EVENT_SERVER_TO_MOBILE
+    EVENT_SERVER_TO_MOBILE,
+    MOBILE_CONNECTION_LOST,
+    MOBILE_CONNECTION_SUCCESS
 } from "./constants";
 
 const app = require('express')();
@@ -112,16 +114,18 @@ io.of("/mobile/0.1").on('connection', function (socket: Socket) {
     const socketId = socket.id;
     console.log(`mobile connection token: "${token}" , clientType: "${clientType}", socket: ${socketId}...`);
     isValidTokenPromise(token).then(() => {
-        socket.emit( EVENT_SERVER_TO_MOBILE, { message: 'connection_success' });
+
+        socket.emit( EVENT_SERVER_TO_MOBILE, [{ name: MOBILE_CONNECTION_SUCCESS, dataString: "", dataNumber: 0 }]);
 
         socket.on('disconnect', function () {
-            console.log("mobile disconnected");
-            const data = { message: 'mobile_connection_lost' };
+            console.log("mobile disconnected !!!");
+            const data = [{ name: MOBILE_CONNECTION_LOST, dataString: "", dataNumber: 0 }];
             emitDataFor(ClientType.Desktop, token ,EVENT_SERVER_TO_DESKTOP, data );
         });
 
         socket.on(EVENT_MOBILE_TO_DESKTOP, (data) => {
-            emitDataFor(ClientType.Desktop, token ,EVENT_MOBILE_TO_DESKTOP, data);
+            const json = JSON.parse(data);
+            emitDataFor(ClientType.Desktop, token ,EVENT_MOBILE_TO_DESKTOP, json);
         });
         currentSockets[socketId] = socket;
         redisClient.hset(`conn:${token}`,"mobile", socketId);
@@ -138,13 +142,13 @@ io.of("/desktop/0.1").on('connection', function (socket: Socket) {
     const socketId = socket.id;
     isValidTokenPromise(token).then( () => {
         console.log(`desktop connection success, token: "${token}", clientType: "${clientType}", `);
-        socket.emit( EVENT_SERVER_TO_DESKTOP, { message: 'connection_success' });
+        socket.emit( EVENT_SERVER_TO_DESKTOP, [{ name: DESKTOP_CONNECTION_SUCCESS, dataString: "", dataNumber: 0 }]);
         currentSockets[socketId] = socket;
         redisClient.hset(`conn:${token}`,"desktop", socketId);
 
-        socket.on('disconnect', function () {
+        socket.on('disconnect', () => {
             console.log("desktop disconnected");
-            const data = { message: 'desktop_connection_lost' };
+            const data = [{ name: DESKTOP_CONNECTION_LOST , dataString: "" , dataNumber: 0 }];
             emitDataFor(ClientType.Mobile, token ,EVENT_SERVER_TO_MOBILE, data );
         });
 
@@ -157,7 +161,7 @@ io.of("/desktop/0.1").on('connection', function (socket: Socket) {
 
     }).catch(reason => {
         console.error(reason);
-        socket.emit('event_to_client', { message: 'connection_failure', description: reason });
+        socket.emit('event_to_client', [{ message: 'connection_failure', description: reason }]);
         socket.disconnect(true);
     });
 

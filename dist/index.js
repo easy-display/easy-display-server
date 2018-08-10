@@ -80,14 +80,15 @@ io.of("/mobile/0.1").on('connection', function (socket) {
     const socketId = socket.id;
     console.log(`mobile connection token: "${token}" , clientType: "${clientType}", socket: ${socketId}...`);
     isValidTokenPromise(token).then(() => {
-        socket.emit(constants_1.EVENT_SERVER_TO_MOBILE, { message: 'connection_success' });
+        socket.emit(constants_1.EVENT_SERVER_TO_MOBILE, [{ name: constants_1.MOBILE_CONNECTION_SUCCESS, dataString: "", dataNumber: 0 }]);
         socket.on('disconnect', function () {
-            console.log("mobile disconnected");
-            const data = { message: 'mobile_connection_lost' };
+            console.log("mobile disconnected !!!");
+            const data = [{ name: constants_1.MOBILE_CONNECTION_LOST, dataString: "", dataNumber: 0 }];
             emitDataFor(constants_1.ClientType.Desktop, token, constants_1.EVENT_SERVER_TO_DESKTOP, data);
         });
         socket.on(constants_1.EVENT_MOBILE_TO_DESKTOP, (data) => {
-            emitDataFor(constants_1.ClientType.Desktop, token, constants_1.EVENT_MOBILE_TO_DESKTOP, data);
+            const json = JSON.parse(data);
+            emitDataFor(constants_1.ClientType.Desktop, token, constants_1.EVENT_MOBILE_TO_DESKTOP, json);
         });
         currentSockets[socketId] = socket;
         redisClient.hset(`conn:${token}`, "mobile", socketId);
@@ -102,12 +103,12 @@ io.of("/desktop/0.1").on('connection', function (socket) {
     const socketId = socket.id;
     isValidTokenPromise(token).then(() => {
         console.log(`desktop connection success, token: "${token}", clientType: "${clientType}", `);
-        socket.emit(constants_1.EVENT_SERVER_TO_DESKTOP, { message: 'connection_success' });
+        socket.emit(constants_1.EVENT_SERVER_TO_DESKTOP, [{ name: constants_1.DESKTOP_CONNECTION_SUCCESS, dataString: "", dataNumber: 0 }]);
         currentSockets[socketId] = socket;
         redisClient.hset(`conn:${token}`, "desktop", socketId);
-        socket.on('disconnect', function () {
+        socket.on('disconnect', () => {
             console.log("desktop disconnected");
-            const data = { message: 'desktop_connection_lost' };
+            const data = [{ name: constants_1.DESKTOP_CONNECTION_LOST, dataString: "", dataNumber: 0 }];
             emitDataFor(constants_1.ClientType.Mobile, token, constants_1.EVENT_SERVER_TO_MOBILE, data);
         });
         socket.on(constants_1.EVENT_DESKTOP_TO_MOBILE, function (data) {
@@ -116,7 +117,7 @@ io.of("/desktop/0.1").on('connection', function (socket) {
         });
     }).catch(reason => {
         console.error(reason);
-        socket.emit('event_to_client', { message: 'connection_failure', description: reason });
+        socket.emit('event_to_client', [{ message: 'connection_failure', description: reason }]);
         socket.disconnect(true);
     });
     /*
