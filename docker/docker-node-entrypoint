@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+CONFD_OPTIONS=${CONFD_OPTIONS:-"-onetime -backend=env"}
+
+/usr/local/bin/confd -log-level=debug $CONFD_OPTIONS -confdir=/confd
+
+NODE_PORT="${NODE_PORT:=4016}" node dist/server.js;
+
