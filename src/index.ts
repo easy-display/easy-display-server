@@ -60,11 +60,12 @@ app.post("/api/v1/connection", (req: Request, res: Response) => {
 
 // server-side
 
-server.listen(8999);
+server.listen(process.env.NODE_PORT);
+
 const redisClient = redis.createClient({
     detect_buffers: true,
-    host: "localhost",
-    port: 6383,
+    host: process.env.REDIS_HOST,
+    port: +process.env.REDIS_PORT,
 });
 
 interface ICurrentSocketType {

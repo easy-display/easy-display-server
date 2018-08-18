@@ -41,11 +41,11 @@ app.post("/api/v1/connection", (req, res) => {
     });
 });
 // server-side
-server.listen(8999);
+server.listen(process.env.NODE_PORT);
 const redisClient = redis_1.default.createClient({
     detect_buffers: true,
-    host: "localhost",
-    port: 6383,
+    host: process.env.REDIS_HOST,
+    port: +process.env.REDIS_PORT,
 });
 const currentSockets = {};
 exports.staticFiles = (req, res) => {

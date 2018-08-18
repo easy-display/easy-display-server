@@ -8,13 +8,13 @@ RUN wget -O /usr/local/bin/confd https://github.com/kelseyhightower/confd/releas
 
 RUN chmod +x /usr/local/bin/confd
 
-COPY . /var/
+COPY . /code/
 
 ADD ./docker/confd/ /confd/
 
 COPY ./docker/docker-node-entrypoint /docker-node-entrypoint
 
-WORKDIR /var/
+WORKDIR /code/
 
 RUN npm install
 
