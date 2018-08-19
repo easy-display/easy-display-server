@@ -43,6 +43,11 @@ app.use("/graphql", express_graphql({
     schema,
 }));
 
+app.get("/api/app/info", (req: Request, res: Response) => {
+    const pjson = require("../package.json");
+    res.send({ version: pjson.version });
+});
+
 app.post("/api/v1/connection", (req: Request, res: Response) => {
 
     const token = Math.random().toString(36).substring(2);

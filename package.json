@@ -26,7 +26,8 @@
     "build-ts": "./node_modules/typescript/bin/tsc",
     "watch-ts": "./node_modules/typescript/bin/tsc -w",
     "tslint": "node_modules/tslint/bin/tslint -c tslint.json -p tsconfig.json",
-    "build": "npm run build-ts && npm run tslint"
+    "copy-package-json": "rm -f ./dist/package.json; cp package.json dist/;",
+    "build": "npm run copy-package-json && npm run build-ts && npm run tslint"
   },
   "author": "Mohammed O. Tillawy",
   "license": "ISC"

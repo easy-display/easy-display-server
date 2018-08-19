@@ -29,6 +29,10 @@ app.use("/graphql", express_graphql_1.default({
     rootValue: root,
     schema,
 }));
+app.get("/api/app/info", (req, res) => {
+    const pjson = require("../package.json");
+    res.send({ version: pjson.version });
+});
 app.post("/api/v1/connection", (req, res) => {
     const token = Math.random().toString(36).substring(2);
     redisClient.hset(`conn:${token}`, "created", Date());
