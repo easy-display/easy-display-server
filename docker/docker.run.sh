@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-IMAGE_NAME="arabiaweather/mawdoo3";
-
 
 
 readonly NETWORK_NAME="easydisplay";
@@ -12,7 +10,7 @@ readonly IMAGE_NAME="easydisplay/backend-http-api";
 
 readonly REGISTRY="registry.docker.easydisplay.info";
 
-CONTAINER_NAME="easydisplay-backend-http-api";
+readonly CONTAINER_NAME="easydisplay-backend-http-api";
 
 export NODE_PORT="9000";
 

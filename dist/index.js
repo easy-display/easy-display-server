@@ -33,13 +33,23 @@ app.get("/api/app/info", (req, res) => {
     const pjson = require("../package.json");
     res.send({ version: pjson.version });
 });
+const apiHost = () => {
+    const development = "api-staging.easydisplay.info";
+    // const development = "macbook-air.duckdns.org:9000";
+    return process.env.NODE_ENV === "production" ? "api-production.easydisplay.info" : development;
+};
+const apiScheme = () => {
+    const development = "https";
+    // const scheme = "http";
+    return process.env.NODE_ENV === "production" ? "api-production.easydisplay.info" : development;
+};
 app.post("/api/v1/connection", (req, res) => {
     const token = Math.random().toString(36).substring(2);
     redisClient.hset(`conn:${token}`, "created", Date());
     redisClient.hset(`conn:${token}`, "version", req.body.version);
     res.send({
-        host: "macbook-air.duckdns.org:8999",
-        scheme: "http",
+        host: apiHost(),
+        scheme: apiScheme(),
         token,
         version: "0.1",
     });
