@@ -34,13 +34,13 @@ app.get("/api/app/info", (req, res) => {
     res.send({ version: pjson.version });
 });
 const apiHost = () => {
-    const development = "api-staging.easydisplay.info";
-    // const development = "macbook-air.duckdns.org:9000";
+    // const development = "api-staging.easydisplay.info";
+    const development = "macbook-air.duckdns.org:9000";
     return process.env.NODE_ENV === "production" ? "api-production.easydisplay.info" : development;
 };
 const apiScheme = () => {
-    const development = "https";
-    // const scheme = "http";
+    // const development = "https";
+    const development = "http";
     return process.env.NODE_ENV === "production" ? "api-production.easydisplay.info" : development;
 };
 app.post("/api/v1/connection", (req, res) => {
@@ -124,12 +124,12 @@ io.of("/desktop/0.1").on("connection", (socket) => {
     const token = socket.handshake.query.token;
     const socketId = socket.id;
     isValidTokenPromise(token).then(() => {
-        console.log(`desktop connection success, token: "${token}", clientType: "${clientType}", `);
+        console.log(`desktop connection success, token: "${token}", clientType: "${clientType}"`);
         socket.emit(constants_1.EVENT_SERVER_TO_DESKTOP, [{ name: constants_1.DESKTOP_CONNECTION_SUCCESS, dataString: "", dataNumber: 0 }]);
         currentSockets[socketId] = socket;
         redisClient.hset(`conn:${token}`, "desktop", socketId);
-        socket.on("disconnect", () => {
-            console.log("desktop disconnected");
+        socket.on("disconnect", (reason) => {
+            console.log("desktop disconnected", reason);
             const data = [{ name: constants_1.DESKTOP_CONNECTION_LOST, dataString: "", dataNumber: 0 }];
             emitDataFor(constants_1.ClientType.Mobile, token, constants_1.EVENT_SERVER_TO_MOBILE, data);
         });

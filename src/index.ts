@@ -22,7 +22,7 @@ const app = express();
 
 const server = require("http").Server(app);
 
-import socketIo, { Socket } from "socket.io";
+import socketIo, {Client, Socket} from "socket.io";
 
 const io = socketIo(server);
 app.use(bodyParser.json());
@@ -49,15 +49,15 @@ app.get("/api/app/info", (req: Request, res: Response) => {
 });
 
 const apiHost = () => {
-    const development = "api-staging.easydisplay.info";
-    // const development = "macbook-air.duckdns.org:9000";
+    // const development = "api-staging.easydisplay.info";
+    const development = "macbook-air.duckdns.org:9000";
     return process.env.NODE_ENV === "production" ? "api-production.easydisplay.info" : development;
 };
 
 
 const apiScheme = () => {
-    const development = "https";
-    // const scheme = "http";
+    // const development = "https";
+    const development = "http";
     return process.env.NODE_ENV === "production" ? "api-production.easydisplay.info" : development;
 };
 
@@ -133,7 +133,7 @@ const emitDataFor = ((clientType: ClientType, token: string, eventName: string, 
 });
 
 io.of("/mobile/0.1").on("connection", (socket: Socket) => {
-    const clientType = socket.handshake.query.client_type;
+    const clientType: ClientType = socket.handshake.query.client_type;
     const token = socket.handshake.query.token;
     const socketId = socket.id;
     console.log(`mobile connection token: "${token}" , clientType: "${clientType}", socket: ${socketId}...`);
@@ -161,17 +161,17 @@ io.of("/mobile/0.1").on("connection", (socket: Socket) => {
 });
 
 io.of("/desktop/0.1").on("connection", (socket: Socket) => {
-    const clientType = socket.handshake.query.client_type;
+    const clientType: ClientType = socket.handshake.query.client_type;
     const token = socket.handshake.query.token;
     const socketId = socket.id;
     isValidTokenPromise(token).then(() => {
-        console.log(`desktop connection success, token: "${token}", clientType: "${clientType}", `);
+        console.log(`desktop connection success, token: "${token}", clientType: "${clientType}"`);
         socket.emit(EVENT_SERVER_TO_DESKTOP, [{ name: DESKTOP_CONNECTION_SUCCESS, dataString: "", dataNumber: 0 }]);
         currentSockets[socketId] = socket;
         redisClient.hset(`conn:${token}`, "desktop", socketId);
 
-        socket.on("disconnect", () => {
-            console.log("desktop disconnected");
+        socket.on("disconnect", (reason) => {
+            console.log("desktop disconnected", reason);
             const data = [{ name: DESKTOP_CONNECTION_LOST , dataString: "" , dataNumber: 0 }];
             emitDataFor(ClientType.Mobile, token , EVENT_SERVER_TO_MOBILE, data);
         });
