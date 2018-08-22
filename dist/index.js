@@ -85,7 +85,7 @@ const isValidTokenPromise = (token) => {
     });
 };
 const emitDataFor = ((clientType, token, eventName, data) => {
-    console.log(`emitDataFor: clientType:${clientType}, token:${token}, event:${eventName}, data: ${data}`);
+    console.log(`emitDataFor: clientType:${clientType}, token:${token}, event:${eventName}, data:`, data);
     redisClient.hget(`conn:${token}`, clientType, (err, socketId) => {
         const socket = currentSockets[socketId];
         if (socket) {

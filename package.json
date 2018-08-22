@@ -1,6 +1,6 @@
 {
   "name": "easy_display_server",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "repository": "https://tillawy@bitbucket.org/tillawy/easy-display-server.git",
   "description": "easy display server",
   "main": "index.js",

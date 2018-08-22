@@ -120,7 +120,7 @@ const isValidTokenPromise = (token: string): Promise<boolean> => {
 
 const emitDataFor = ((clientType: ClientType, token: string, eventName: string, data: any) => {
 
-    console.log(`emitDataFor: clientType:${clientType}, token:${token}, event:${eventName}, data: ${data}`);
+    console.log(`emitDataFor: clientType:${clientType}, token:${token}, event:${eventName}, data:`, data);
     redisClient.hget(`conn:${token}`, clientType , (err: Error, socketId: string) => {
         const socket = currentSockets[socketId as string];
         if (socket) {
