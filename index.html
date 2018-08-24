@@ -1,6 +1,43 @@
 <html>
-<title>Title</title>
+<title>EasyDisplay</title>
 <body>
-    Hello
+    <h1>Welcome to EasyDisplay</h1>
+    <button onclick="ping()">Ping</button>
+    <div id="latency">latency: N/A</div>
 </body>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    const socket_uri = () => {
+        let loc = window.location, new_uri;
+        if (loc.protocol === "https:") {
+            new_uri = "wss:";
+        } else {
+            new_uri = "ws:";
+        }
+        new_uri += "//" + loc.host;
+        new_uri += loc.pathname + "web/0.1";
+        console.log("uri: " + new_uri);
+        return new_uri;
+    };
+    const socket = io.connect(socket_uri());
+    let startTime;
+
+    socket.on('zong', () => {
+        let latency = Date.now() - startTime;
+        console.log("latency: " ,latency);
+        document.getElementById("latency").innerHTML = "latency = " + latency + " ms.";
+    });
+
+    const ping = () => {
+        console.log("zing ...");
+        startTime = Date.now();
+        socket.emit('zing');
+    };
+
+    console.log("page loaded.");
+
+</script>
+
 </html>

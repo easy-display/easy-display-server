@@ -23,6 +23,7 @@ const app = express();
 const server = require("http").Server(app);
 
 import socketIo, {Client, Socket} from "socket.io";
+import * as path from "path";
 
 const io = socketIo(server);
 app.use(bodyParser.json());
@@ -102,9 +103,10 @@ export let staticFiles = (req: Request, res: Response) => {
 
 app.get("/", staticFiles);
 
+app.use("/socket.io", express.static(path.join(__dirname, "node_modules/socket.io-client/dist/")));
+
 const isValidTokenPromise = (token: string): Promise<boolean> => {
     return new Promise((resolve, reject) => {
-
         redisClient.hget(`conn:${token}`, "created", (err: Error, created: string) => {
             if (err) {
                 return reject(err);
@@ -130,6 +132,17 @@ const emitDataFor = ((clientType: ClientType, token: string, eventName: string, 
         }
     });
 
+});
+
+io.of("/web/0.1").on("connection", (socket: Socket) => {
+    console.debug("web connected.");
+    socket.on("zing", () => {
+        console.debug("ping => pong");
+        socket.emit("zong");
+    });
+    socket.on("disconnect", () => {
+        console.log("web disconnected.");
+    });
 });
 
 io.of("/mobile/0.1").on("connection", (socket: Socket) => {

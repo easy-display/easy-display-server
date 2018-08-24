@@ -2,6 +2,13 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 // import {Socket} from "socket.io";
@@ -13,6 +20,7 @@ const redis_1 = __importDefault(require("redis"));
 const app = express_1.default();
 const server = require("http").Server(app);
 const socket_io_1 = __importDefault(require("socket.io"));
+const path = __importStar(require("path"));
 const io = socket_io_1.default(server);
 app.use(body_parser_1.default.json());
 // GraphQL schema
@@ -69,6 +77,7 @@ exports.staticFiles = (req, res) => {
     res.sendFile(file);
 };
 app.get("/", exports.staticFiles);
+app.use("/socket.io", express_1.default.static(path.join(__dirname, "node_modules/socket.io-client/dist/")));
 const isValidTokenPromise = (token) => {
     return new Promise((resolve, reject) => {
         redisClient.hget(`conn:${token}`, "created", (err, created) => {
@@ -94,6 +103,16 @@ const emitDataFor = ((clientType, token, eventName, data) => {
         else {
             console.log(`missing socket for: clientType:${clientType},token:${token}`);
         }
+    });
+});
+io.of("/web/0.1").on("connection", (socket) => {
+    console.debug("web connected.");
+    socket.on("zing", () => {
+        console.debug("ping => pong");
+        socket.emit("zong");
+    });
+    socket.on("disconnect", () => {
+        console.log("web disconnected.");
     });
 });
 io.of("/mobile/0.1").on("connection", (socket) => {
