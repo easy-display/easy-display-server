@@ -22,7 +22,7 @@ const app = express();
 
 const server = require("http").Server(app);
 
-import socketIo, {Client, Socket} from "socket.io";
+import socketIo, { Client, Socket } from "socket.io";
 import * as path from "path";
 
 const io = socketIo(server);
