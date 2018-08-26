@@ -17,10 +17,11 @@ const body_parser_1 = __importDefault(require("body-parser"));
 const express_graphql_1 = __importDefault(require("express-graphql"));
 const graphql_1 = require("graphql");
 const redis_1 = __importDefault(require("redis"));
-const app = express_1.default();
-const server = require("http").Server(app);
 const socket_io_1 = __importDefault(require("socket.io"));
 const path = __importStar(require("path"));
+const types_1 = require("./types");
+const app = express_1.default();
+const server = require("http").Server(app);
 const io = socket_io_1.default(server);
 app.use(body_parser_1.default.json());
 // GraphQL schema
@@ -41,25 +42,36 @@ app.get("/api/app/info", (req, res) => {
     const pjson = require("../package.json");
     res.send({ version: pjson.version });
 });
-const apiHost = () => {
-    // const development = "api-staging.easydisplay.info";
-    const development = "macbook-air.duckdns.org:9000";
-    return process.env.NODE_ENV === "production" ? "api-production.easydisplay.info" : development;
+const environmeent = () => {
+    if (process.env.NODE_ENV == "production") {
+        return types_1.IApiEnvironment.Production;
+    }
+    else if (process.env.NODE_ENV == "staging") {
+        return types_1.IApiEnvironment.Staging;
+    }
+    else {
+        return types_1.IApiEnvironment.Development;
+    }
 };
-const apiScheme = () => {
-    // const development = "https";
-    const development = "http";
-    return process.env.NODE_ENV === "production" ? "api-production.easydisplay.info" : development;
+const apiConnection = () => {
+    switch (environmeent()) {
+        case types_1.IApiEnvironment.Production:
+            return { host: "api-production.easydisplay.info", scheme: "https", "version": "0.1" };
+        case types_1.IApiEnvironment.Staging:
+            return { host: "api-staging.easydisplay.info", scheme: "https", "version": "0.1" };
+        case types_1.IApiEnvironment.Development:
+            return { host: "macbook-air.duckdns.org:9000", scheme: "http", "version": "0.1" };
+    }
 };
 app.post("/api/v1/connection", (req, res) => {
     const token = Math.random().toString(36).substring(2);
     redisClient.hset(`conn:${token}`, "created", Date());
     redisClient.hset(`conn:${token}`, "version", req.body.version);
     res.send({
-        host: apiHost(),
-        scheme: apiScheme(),
+        host: apiConnection().host,
+        scheme: apiConnection().scheme,
         token,
-        version: "0.1",
+        version: apiConnection().version,
     });
 });
 // server-side

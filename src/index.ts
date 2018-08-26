@@ -1,8 +1,9 @@
 import express, { Request, Response } from "express";
-
 // import {Socket} from "socket.io";
 import {
-    ClientType, DESKTOP_CONNECTION_LOST, DESKTOP_CONNECTION_SUCCESS,
+    ClientType,
+    DESKTOP_CONNECTION_LOST,
+    DESKTOP_CONNECTION_SUCCESS,
     EVENT_DESKTOP_TO_MOBILE,
     EVENT_MOBILE_TO_DESKTOP,
     EVENT_SERVER_TO_DESKTOP,
@@ -17,13 +18,13 @@ import express_graphql from "express-graphql";
 import { buildSchema } from "graphql";
 
 import redis from "redis";
+import socketIo, { Socket } from "socket.io";
+import * as path from "path";
+import { IApiConnection, IApiEnvironment } from "./types";
 
 const app = express();
 
 const server = require("http").Server(app);
-
-import socketIo, { Client, Socket } from "socket.io";
-import * as path from "path";
 
 const io = socketIo(server);
 app.use(bodyParser.json());
@@ -49,17 +50,26 @@ app.get("/api/app/info", (req: Request, res: Response) => {
     res.send({ version: pjson.version });
 });
 
-const apiHost = () => {
-    // const development = "api-staging.easydisplay.info";
-    const development = "macbook-air.duckdns.org:9000";
-    return process.env.NODE_ENV === "production" ? "api-production.easydisplay.info" : development;
+
+
+const environmeent = (): IApiEnvironment =>  {
+    if (process.env.NODE_ENV == "production") {
+        return IApiEnvironment.Production;
+    } else if (process.env.NODE_ENV == "staging") {
+        return IApiEnvironment.Staging;
+    } else {
+        return IApiEnvironment.Development;
+    }
 };
-
-
-const apiScheme = () => {
-    // const development = "https";
-    const development = "http";
-    return process.env.NODE_ENV === "production" ? "api-production.easydisplay.info" : development;
+const apiConnection = (): IApiConnection =>  {
+    switch (environmeent()) {
+        case IApiEnvironment.Production:
+            return {host: "api-production.easydisplay.info", scheme: "https", "version": "0.1"};
+        case IApiEnvironment.Staging:
+            return {host: "api-staging.easydisplay.info", scheme: "https", "version": "0.1"};
+        case IApiEnvironment.Development:
+            return {host: "macbook-air.duckdns.org:9000", scheme: "http", "version": "0.1"};
+    }
 };
 
 
@@ -71,10 +81,10 @@ app.post("/api/v1/connection", (req: Request, res: Response) => {
     redisClient.hset(`conn:${token}`, "version", req.body.version);
 
     res.send({
-        host: apiHost(),
-        scheme: apiScheme(),
+        host: apiConnection().host,
+        scheme: apiConnection().scheme,
         token,
-        version: "0.1",
+        version: apiConnection().version,
     });
 });
 
