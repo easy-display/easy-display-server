@@ -9,5 +9,4 @@ export enum IApiEnvironment {
     Development  = "development",
     Staging      = "staging",
     Production   = "production",
-
 }

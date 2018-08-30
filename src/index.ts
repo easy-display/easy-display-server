@@ -1,13 +1,14 @@
-import express, { Request, Response } from "express";
+import express, {Request, Response} from "express";
 // import {Socket} from "socket.io";
 import {
     ClientType,
-    DESKTOP_CONNECTION_LOST,
-    DESKTOP_CONNECTION_SUCCESS,
+    DESKTOP_CONNECTION_LOST, DESKTOP_CONNECTION_SUCCESS_IPAD_PAIRED, DESKTOP_CONNECTION_SUCCESS_IPAD_PAIRING_REQUIRED,
+    EVENT_CONNECTION_FAILURE,
     EVENT_DESKTOP_TO_MOBILE,
     EVENT_MOBILE_TO_DESKTOP,
     EVENT_SERVER_TO_DESKTOP,
     EVENT_SERVER_TO_MOBILE,
+    INVALID_TOKEN,
     MOBILE_CONNECTION_LOST,
     MOBILE_CONNECTION_SUCCESS,
 } from "./constants";
@@ -15,12 +16,12 @@ import {
 import bodyParser from "body-parser";
 
 import express_graphql from "express-graphql";
-import { buildSchema } from "graphql";
+import {buildSchema} from "graphql";
 
 import redis from "redis";
-import socketIo, { Socket } from "socket.io";
+import socketIo, {Socket} from "socket.io";
 import * as path from "path";
-import { IApiConnection, IApiEnvironment } from "./types";
+import {IApiConnection, IApiEnvironment} from "./types";
 
 const app = express();
 
@@ -77,7 +78,7 @@ app.post("/api/v1/connection", (req: Request, res: Response) => {
 
     const token = Math.random().toString(36).substring(2);
 
-    redisClient.hset(`conn:${token}`, "created", Date());
+    redisClient.hset(`conn:${token}`, "created_at", Date());
     redisClient.hset(`conn:${token}`, "version", req.body.version);
 
     res.send({
@@ -115,24 +116,48 @@ app.get("/", staticFiles);
 
 app.use("/socket.io", express.static(path.join(__dirname, "node_modules/socket.io-client/dist/")));
 
+
+
 const isValidTokenPromise = (token: string): Promise<boolean> => {
     return new Promise((resolve, reject) => {
-        redisClient.hget(`conn:${token}`, "created", (err: Error, created: string) => {
+        redisClient.hget(`conn:${token}`, "created_at", (err: Error, found: string) => {
             if (err) {
                 return reject(err);
             }
-            if (created !== null) {
+            if (found !== null) {
                 resolve(true);
             } else {
-                reject(new Error("bad auth"));
+                reject(new Error(INVALID_TOKEN));
             }
         });
     });
 };
 
+
+const PromiseSocketFor = (token: String, clientType: ClientType): Promise<Socket> => {
+    return new Promise((resolve, reject) => {
+        redisClient.hget(`conn:${token}`, clientType, (err: Error, socketId: string) => {
+            const socket = currentSockets[socketId as string];
+            if (socket) {
+                resolve(socket);
+            } else {
+                console.log(`missing socket for: clientType:${clientType},token:${token}`);
+                reject(new Error(`no socket type: ${clientType}, token: ${token}`));
+            }
+        });
+    });
+
+};
+
 const emitDataFor = ((clientType: ClientType, token: string, eventName: string, data: any) => {
 
     console.log(`emitDataFor: clientType:${clientType}, token:${token}, event:${eventName}, data:`, data);
+    PromiseSocketFor(token, clientType).then((socket) => {
+        socket.emit(eventName, data);
+    }).catch((err) => {
+        console.log(err);
+    });
+    /*
     redisClient.hget(`conn:${token}`, clientType , (err: Error, socketId: string) => {
         const socket = currentSockets[socketId as string];
         if (socket) {
@@ -141,6 +166,7 @@ const emitDataFor = ((clientType: ClientType, token: string, eventName: string, 
             console.log(`missing socket for: clientType:${clientType},token:${token}`);
         }
     });
+    */
 
 });
 
@@ -168,6 +194,8 @@ io.of("/mobile/0.1").on("connection", (socket: Socket) => {
             console.log("mobile disconnected !!!");
             const data = [{ name: MOBILE_CONNECTION_LOST, dataString: "", dataNumber: 0 }];
             emitDataFor(ClientType.Desktop, token , EVENT_SERVER_TO_DESKTOP, data);
+            delete(currentSockets[socket.id]);
+            redisClient.hdel(`conn:${token}`, ClientType.Mobile);
         });
 
         socket.on(EVENT_MOBILE_TO_DESKTOP, (data) => {
@@ -177,7 +205,9 @@ io.of("/mobile/0.1").on("connection", (socket: Socket) => {
         currentSockets[socketId] = socket;
         redisClient.hset(`conn:${token}`, "mobile", socketId);
     }).catch((reason) => {
-        socket.emit("event_to_client", { message: reason });
+        console.info("mobile connection-failure", reason);
+        const msg = { name: EVENT_CONNECTION_FAILURE, dataString: reason.message, dataNumber: 0 };
+        socket.emit(EVENT_SERVER_TO_MOBILE, [ msg ]);
         socket.disconnect(true);
     });
 
@@ -189,14 +219,22 @@ io.of("/desktop/0.1").on("connection", (socket: Socket) => {
     const socketId = socket.id;
     isValidTokenPromise(token).then(() => {
         console.log(`desktop connection success, token: "${token}", clientType: "${clientType}"`);
-        socket.emit(EVENT_SERVER_TO_DESKTOP, [{ name: DESKTOP_CONNECTION_SUCCESS, dataString: "", dataNumber: 0 }]);
         currentSockets[socketId] = socket;
-        redisClient.hset(`conn:${token}`, "desktop", socketId);
+
+        redisClient.hset(`conn:${token}`, ClientType.Desktop, socketId, (isSet) => {
+            PromiseSocketFor(token, ClientType.Mobile).then((mobSocket) => {
+                socket.emit(EVENT_SERVER_TO_DESKTOP, [{ name: DESKTOP_CONNECTION_SUCCESS_IPAD_PAIRED, dataString: "", dataNumber: 0 }]);
+            }).catch((err) => {
+                socket.emit(EVENT_SERVER_TO_DESKTOP, [{ name: DESKTOP_CONNECTION_SUCCESS_IPAD_PAIRING_REQUIRED, dataString: "", dataNumber: 0 }]);
+            });
+        });
 
         socket.on("disconnect", (reason) => {
             console.log("desktop disconnected", reason);
             const data = [{ name: DESKTOP_CONNECTION_LOST , dataString: "" , dataNumber: 0 }];
             emitDataFor(ClientType.Mobile, token , EVENT_SERVER_TO_MOBILE, data);
+            delete(currentSockets[socket.id]);
+            redisClient.hdel(`conn:${token}`, ClientType.Desktop);
         });
 
         socket.on(EVENT_DESKTOP_TO_MOBILE, (data) => {
@@ -207,8 +245,9 @@ io.of("/desktop/0.1").on("connection", (socket: Socket) => {
         });
 
     }).catch((reason) => {
-        console.error(reason);
-        socket.emit("event_to_client", [{ message: "connection_failure", description: reason }]);
+        console.info("desktop connection-failure", reason);
+        const msg = { name: EVENT_CONNECTION_FAILURE, dataString: reason.message, dataNumber: 0 };
+        socket.emit(EVENT_SERVER_TO_DESKTOP, [ msg ]);
         socket.disconnect(true);
     });
 
