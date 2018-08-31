@@ -117,8 +117,7 @@ app.get("/", staticFiles);
 app.use("/socket.io", express.static(path.join(__dirname, "node_modules/socket.io-client/dist/")));
 
 
-
-const isValidTokenPromise = (token: string): Promise<boolean> => {
+const PromiseIsValidToken = (token: string): Promise<boolean> => {
     return new Promise((resolve, reject) => {
         redisClient.hget(`conn:${token}`, "created_at", (err: Error, found: string) => {
             if (err) {
@@ -186,7 +185,7 @@ io.of("/mobile/0.1").on("connection", (socket: Socket) => {
     const token = socket.handshake.query.token;
     const socketId = socket.id;
     console.log(`mobile connection token: "${token}" , clientType: "${clientType}", socket: ${socketId}...`);
-    isValidTokenPromise(token).then(() => {
+    PromiseIsValidToken(token).then(() => {
 
         socket.emit(EVENT_SERVER_TO_MOBILE, [{ name: MOBILE_CONNECTION_SUCCESS, dataString: "", dataNumber: 0 }]);
 
@@ -208,6 +207,7 @@ io.of("/mobile/0.1").on("connection", (socket: Socket) => {
         console.info("mobile connection-failure", reason);
         const msg = { name: EVENT_CONNECTION_FAILURE, dataString: reason.message, dataNumber: 0 };
         socket.emit(EVENT_SERVER_TO_MOBILE, [ msg ]);
+        console.info("EVENT_SERVER_TO_MOBILE", msg);
         socket.disconnect(true);
     });
 
@@ -217,7 +217,7 @@ io.of("/desktop/0.1").on("connection", (socket: Socket) => {
     const clientType: ClientType = socket.handshake.query.client_type;
     const token = socket.handshake.query.token;
     const socketId = socket.id;
-    isValidTokenPromise(token).then(() => {
+    PromiseIsValidToken(token).then(() => {
         console.log(`desktop connection success, token: "${token}", clientType: "${clientType}"`);
         currentSockets[socketId] = socket;
 
