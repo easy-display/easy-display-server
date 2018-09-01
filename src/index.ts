@@ -1,4 +1,4 @@
-import express, {Request, Response} from "express";
+import express, { Request , Response } from "express";
 // import {Socket} from "socket.io";
 import {
     ClientType,
@@ -16,12 +16,12 @@ import {
 import bodyParser from "body-parser";
 
 import express_graphql from "express-graphql";
-import {buildSchema} from "graphql";
+import { buildSchema } from "graphql";
 
 import redis from "redis";
-import socketIo, {Socket} from "socket.io";
+import socketIo, { Socket } from "socket.io";
 import * as path from "path";
-import {IApiConnection, IApiEnvironment} from "./types";
+import { IApiConnection, IApiEnvironment } from "./types";
 
 const app = express();
 
