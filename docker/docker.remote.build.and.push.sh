@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+readonly REGISTRY="registry.docker.easydisplay.info";
+
+docker login ${REGISTRY};
+
 rm -rf dist/*
 
 npm run build
@@ -9,8 +13,6 @@ readonly APP_VERSION=$(cat package.json  | grep version | cut -f 4 -d '"');
 readonly PROJECT_NAME="easydisplay/backend-http-api";
 
 readonly IMAGE_NAME="${PROJECT_NAME}:${APP_VERSION}";
-
-readonly REGISTRY="registry.docker.easydisplay.info";
 
 readonly REMOTE_TAG="${1}";
 
