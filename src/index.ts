@@ -225,6 +225,7 @@ io.of("/desktop/0.1").on("connection", (socket: Socket) => {
             PromiseSocketFor(token, ClientType.Mobile).then((mobSocket) => {
                 socket.emit(EVENT_SERVER_TO_DESKTOP, [{ name: DESKTOP_CONNECTION_SUCCESS_IPAD_PAIRED, dataString: "", dataNumber: 0 }]);
             }).catch((err) => {
+                console.log(`connections for token: "${token}" not found on this server.`);
                 socket.emit(EVENT_SERVER_TO_DESKTOP, [{ name: DESKTOP_CONNECTION_SUCCESS_IPAD_PAIRING_REQUIRED, dataString: "", dataNumber: 0 }]);
             });
         });
