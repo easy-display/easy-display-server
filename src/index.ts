@@ -1,5 +1,5 @@
 import express, { Request , Response } from "express";
-// import {Socket} from "socket.io";
+
 import {
     ClientType,
     DESKTOP_CONNECTION_LOST, DESKTOP_CONNECTION_SUCCESS_IPAD_PAIRED, DESKTOP_CONNECTION_SUCCESS_IPAD_PAIRING_REQUIRED,
@@ -21,7 +21,8 @@ import { buildSchema } from "graphql";
 import redis from "redis";
 import socketIo, { Socket } from "socket.io";
 import * as path from "path";
-import { IApiConnection, IApiEnvironment } from "./types";
+import {IAction, IApiConnection, IApiEnvironment, IIntegration} from "./types";
+import * as fs from "fs";
 
 const app = express();
 
@@ -34,16 +35,57 @@ app.use(bodyParser.json());
 const schema = buildSchema(`
     type Query {
         message: String
+        integration(name: String): Integration
+        integrations: [Integration]
+    }
+    type Integration {
+        name: String
+        description: String
+        valid_urls: [String]
+        author: String
+        version: String
+        actions: [Action]
+    }
+    type Action {
+        name: String
+        call: String
+        call_template: String
+        parameters: [Parameter]
+    }
+    type Parameter {
+        name: String
+        type: String
     }
 `);
 
+
+function getIntegrationsList(): Array<IIntegration> {
+    const files = fs.readdirSync("./content");
+    const output: Array<IIntegration> = files.map(dir => {
+        const integration: IIntegration = require(`../content/${dir}`);
+        console.log(integration);
+        return integration;
+    });
+    return output;
+}
+
+function getIntegration(name: string): IIntegration {
+    const integration: IIntegration = require(`../content/${name}`);
+    console.log(integration);
+    return integration;
+}
+
+
 const root = {
     message: () => "Hello World!",
+    integration: ( obj: {name: string} ) => getIntegration(obj.name),
+    integrations: () => getIntegrationsList(),
 };
-app.use("/graphql", express_graphql({
+
+app.use("/__graphql", express_graphql({
     graphiql: true,
     rootValue: root,
-    schema,
+    schema: schema,
 }));
 
 app.get("/api/app/info", (req: Request, res: Response) => {
